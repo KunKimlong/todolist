@@ -1,0 +1,10 @@
+# Liquibase master changelog.
+# Add new migrations as files in ./changes and include them here, in order.
+# Never edit a changeset that has already been applied — add a new one instead.
+databaseChangeLog:
+  - include:
+      file: changes/001-create-todos-table.yaml
+      relativeToChangelogFile: true
+  - include:
+      file: changes/002-create-account-tables.yaml
+      relativeToChangelogFile: true

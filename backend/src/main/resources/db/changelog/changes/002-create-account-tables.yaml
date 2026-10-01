@@ -1,0 +1,102 @@
+databaseChangeLog:
+  - changeSet:
+      id: 002-create-app-user-table
+      author: todo-app
+      comment: The login account. Its password can be changed from the app, so it lives in the database.
+      changes:
+        - createTable:
+            tableName: app_user
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    primaryKeyName: app_user_pkey
+                    nullable: false
+              - column:
+                  name: email
+                  type: VARCHAR(254)
+                  constraints:
+                    nullable: false
+                    unique: true
+                    uniqueConstraintName: app_user_email_key
+              - column:
+                  name: password_hash
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: password_changed_at
+                  type: TIMESTAMP(6) WITH TIME ZONE
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created_at
+                  type: TIMESTAMP(6) WITH TIME ZONE
+                  constraints:
+                    nullable: false
+      rollback:
+        - dropTable:
+            tableName: app_user
+
+  - changeSet:
+      id: 002-create-password-otp-table
+      author: todo-app
+      comment: One-time codes emailed for password resets. Only a SHA-256 hash of each code is stored.
+      changes:
+        - createTable:
+            tableName: password_otp
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    primaryKeyName: password_otp_pkey
+                    nullable: false
+              - column:
+                  name: user_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+                    foreignKeyName: password_otp_user_fk
+                    references: app_user(id)
+                    deleteCascade: true
+              - column:
+                  name: code_hash
+                  type: VARCHAR(64)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: expires_at
+                  type: TIMESTAMP(6) WITH TIME ZONE
+                  constraints:
+                    nullable: false
+              - column:
+                  name: attempts
+                  type: INTEGER
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false
+              - column:
+                  name: consumed_at
+                  type: TIMESTAMP(6) WITH TIME ZONE
+              - column:
+                  name: created_at
+                  type: TIMESTAMP(6) WITH TIME ZONE
+                  constraints:
+                    nullable: false
+        - createIndex:
+            tableName: password_otp
+            indexName: password_otp_user_created_idx
+            columns:
+              - column:
+                  name: user_id
+              - column:
+                  name: created_at
+      rollback:
+        - dropTable:
+            tableName: password_otp
