@@ -33,8 +33,9 @@ todo/
 │       ├── mail/           # Sends the code email over SMTP (Brevo)
 │       ├── todo/           # Entity, repository, service, controller, DTOs
 │       ├── config/         # Security (session) + CORS configuration
-│       └── common/         # Global exception handler (ProblemDetail)
+│       └── common/         # Global exception handler (ProblemDetail), GET /health
 │   ├── src/main/resources/db/changelog/   # Liquibase migrations
+│   ├── Dockerfile          # Optional image build: docker build -t todo-backend backend
 │   └── .env.example        # Copy to .env for your email + Brevo SMTP key
 └── frontend/               # Next.js app (port 3000)
     └── src/
@@ -45,6 +46,7 @@ todo/
         ├── components/todo # Todo UI components
         ├── components/ui   # shadcn/ui components
         └── lib/            # API client, types, helpers
+    └── .env.example        # Copy to .env.local to point the frontend at the backend
 ```
 
 ## Getting started
@@ -69,7 +71,7 @@ cd backend
 ```
 
 API runs at http://localhost:8080. Override settings with env vars:
-`DB_URL`, `DB_USERNAME`, `DB_PASSWORD`, `PORT`, `CORS_ORIGINS`.
+`DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USERNAME`, `DB_PASSWORD`, `PORT`, `CORS_ORIGINS`.
 
 #### Local settings: `backend/.env`
 
@@ -194,8 +196,24 @@ npm run dev                   # or: npm run dev -- -p 3005 to use another port
 ```
 
 Open http://localhost:3000. The Next.js server proxies `/api/*` to the backend
-(see `next.config.ts`), so no CORS setup is needed. Set `BACKEND_URL` if the
-backend is not on `http://localhost:8080`.
+(see `next.config.ts`), so no CORS setup is needed.
+
+#### Frontend settings: `frontend/.env.local`
+
+`BACKEND_URL` points the server at the backend; it defaults to `http://localhost:8080`,
+so you only need this file when the backend lives somewhere else (for example
+`http://backend:8080` when the frontend is a container on the same network). Start from
+the example:
+
+```bash
+cd frontend
+cp .env.example .env.local      # then edit it
+```
+
+| Setting             | Default     | Used by |
+| ------------------- | ----------- | ------- |
+| `BACKEND_URL`       | `http://localhost:8080` | `next.config.ts` (the `/api/*` proxy) and `src/proxy.ts` (the session check) |
+| `NEXT_PUBLIC_API_URL` | `/api`    | The browser, only when you want to skip the proxy and call the backend directly. Needs `CORS_ORIGINS` on the backend to allow the frontend's origin. |
 
 ## REST API
 
@@ -204,6 +222,7 @@ session and returns `401` otherwise.
 
 | Method | Path                      | Description              |
 | ------ | ------------------------- | ------------------------ |
+| GET    | `/health`                 | Backend, database and Redis status; no session needed (`200` up, `503` down) |
 | POST   | `/api/auth/login`         | Sign in: `{"email": "...", "password": "..."}` |
 | POST   | `/api/auth/logout`        | Sign out (ends the session) |
 | GET    | `/api/auth/me`            | Current user's email     |

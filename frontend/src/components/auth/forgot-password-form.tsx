@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import React, { useState } from "react";
 import Link from "next/link";
 import { BiLoaderAlt } from "react-icons/bi";
 import { HiArrowLeft } from "react-icons/hi2";
@@ -17,7 +17,7 @@ export function ForgotPasswordForm() {
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  async function requestCode(e: React.FormEvent) {
+  async function requestCode(e: React.SubmitEvent<HTMLFormElement>) {
     e.preventDefault();
     if (!email.trim() || sending) return;
     setSending(true);
@@ -64,15 +64,6 @@ export function ForgotPasswordForm() {
                 window.location.replace("/login?reset=1");
               }}
               submitLabel="Reset password"
-              footer={
-                <button
-                  type="button"
-                  onClick={() => setSent(null)}
-                  className="cursor-pointer text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
-                >
-                  Use a different email
-                </button>
-              }
             />
           </div>
         ) : (

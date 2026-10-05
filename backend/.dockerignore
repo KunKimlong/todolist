@@ -1,0 +1,21 @@
+# Built inside the image, never copied in
+target/
+
+# Version control and IDE noise
+.git/
+.gitattributes
+.idea/
+*.iml
+.vscode/
+
+# Windows-only wrapper script
+mvnw.cmd
+
+# Secrets: .env holds the mail password and login credentials.
+# Only the example is harmless, and it is not needed to build either.
+.env
+.env.*
+!.env.example
+
+Dockerfile
+.dockerignore

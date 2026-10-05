@@ -1,0 +1,94 @@
+spring:
+  application:
+    name: todo
+  server:
+    port: "${PORT}"
+
+  # Every setting below reads an environment variable with no fallback: if one is missing
+  # the backend refuses to start. Put the values in backend/.env (git-ignored), see
+  # backend/.env.example. Real environment variables take precedence over that file.
+  config:
+    import: "optional:file:.env[.properties]"
+
+  datasource:
+    # Assembled from parts so each one can be overridden on its own
+    url: "jdbc:postgresql://${DB_HOST}:${DB_PORT}/${DB_NAME}"
+    username: "${DB_USERNAME}"
+    password: "${DB_PASSWORD}"
+
+  # Schema is managed by Liquibase (src/main/resources/db/changelog); Hibernate only validates it
+  liquibase:
+    change-log: classpath:db/changelog/db.changelog-master.yaml
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: UTC
+
+  data:
+    redis:
+      host: "${REDIS_HOST}"
+      port: "${REDIS_PORT}"
+      password: "${REDIS_PASSWORD}"
+
+  # Sessions are stored in Redis (Spring Session), so they survive backend restarts
+  session:
+    data:
+      redis:
+        namespace: "todo:session"
+        # "indexed" lets us find a user's sessions (to sign out other devices after a password change)
+        repository-type: indexed
+    # Idle timeout: the session ends after this long without any request
+    timeout: "${SESSION_IDLE_TIMEOUT}"
+
+  # Outgoing mail via Brevo SMTP (https://app.brevo.com > SMTP & API > SMTP)
+  mail:
+    host: "${MAIL_HOST}"
+    port: "${MAIL_PORT}"
+    username: "${MAIL_USERNAME}"
+    password: "${MAIL_PASSWORD}"
+    properties:
+      mail:
+        smtp:
+          auth: "${MAIL_SMTP_AUTH}"
+          starttls: 
+            enable: "${MAIL_STARTTLS}"
+            required: "${MAIL_STARTTLS}"
+          connectiontimeout: 10000
+          timeout: 10000
+          writetimeout: 10000
+
+app:
+  # Allowed origin pattern(s) for the Next.js frontend (comma separated, wildcards allowed)
+  cors:
+    allowed-origins: "${CORS_ORIGINS}"
+
+  # The single login account. APP_AUTH_EMAIL must be a real inbox: reset codes are sent there.
+  # APP_AUTH_PASSWORD is only used the first time the account is created; after that the
+  # password is stored (hashed) in the database and changed from Settings in the app.
+  auth:
+    email: "${APP_AUTH_EMAIL}"
+    password: "${APP_AUTH_PASSWORD}"
+
+  session:
+    # Absolute lifetime: sign in again this long after signing in, even if active
+    max-lifetime: "${SESSION_MAX_LIFETIME}"
+    # The browser only gets an HttpOnly, SameSite=Lax cookie (no tokens); see SessionConfig
+    cookie-name: TODO_SESSION
+    # Set to true when served over HTTPS
+    cookie-secure: "${SESSION_COOKIE_SECURE}"
+
+  mail:
+    # Sender shown in the inbox; with Brevo this address must be a verified sender
+    from: "${MAIL_FROM}"
+    from-name: "${MAIL_FROM_NAME}"
+
+  # One-time password reset codes
+  otp:
+    ttl: 10m
+    resend-after: 60s
+    max-attempts: 5
+    max-per-hour: 5
