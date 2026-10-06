@@ -17,32 +17,32 @@ function isEditable(target: EventTarget | null) {
  * checks, HttpOnly cookie).
  */
 export function InspectGuard() {
-  useEffect(() => {
-    function onContextMenu(e: MouseEvent) {
-      if (!isEditable(e.target)) e.preventDefault();
-    }
-
-    function onKeyDown(e: KeyboardEvent) {
-      const ctrlOrCmd = e.ctrlKey || e.metaKey;
-      const blocked =
-        e.key === "F12" ||
-        // Ctrl+Shift+I/J/C (Windows, Linux) and Cmd+Option+I/J/C (Mac): DevTools panels
-        (ctrlOrCmd && (e.shiftKey || e.altKey) && ["KeyI", "KeyJ", "KeyC"].includes(e.code)) ||
-        // Ctrl+U / Cmd+Option+U: view source
-        (ctrlOrCmd && e.code === "KeyU");
-      if (blocked) {
-        e.preventDefault();
-        e.stopPropagation();
-      }
-    }
-
-    document.addEventListener("contextmenu", onContextMenu);
-    window.addEventListener("keydown", onKeyDown, { capture: true });
-    return () => {
-      document.removeEventListener("contextmenu", onContextMenu);
-      window.removeEventListener("keydown", onKeyDown, { capture: true });
-    };
-  }, []);
-
-  return null;
+  // useEffect(() => {
+  //   function onContextMenu(e: MouseEvent) {
+  //     if (!isEditable(e.target)) e.preventDefault();
+  //   }
+  //
+  //   function onKeyDown(e: KeyboardEvent) {
+  //     const ctrlOrCmd = e.ctrlKey || e.metaKey;
+  //     const blocked =
+  //       e.key === "F12" ||
+  //       // Ctrl+Shift+I/J/C (Windows, Linux) and Cmd+Option+I/J/C (Mac): DevTools panels
+  //       (ctrlOrCmd && (e.shiftKey || e.altKey) && ["KeyI", "KeyJ", "KeyC"].includes(e.code)) ||
+  //       // Ctrl+U / Cmd+Option+U: view source
+  //       (ctrlOrCmd && e.code === "KeyU");
+  //     if (blocked) {
+  //       e.preventDefault();
+  //       e.stopPropagation();
+  //     }
+  //   }
+  //
+  //   document.addEventListener("contextmenu", onContextMenu);
+  //   window.addEventListener("keydown", onKeyDown, { capture: true });
+  //   return () => {
+  //     document.removeEventListener("contextmenu", onContextMenu);
+  //     window.removeEventListener("keydown", onKeyDown, { capture: true });
+  //   };
+  // }, []);
+  //
+  // return null;
 }
