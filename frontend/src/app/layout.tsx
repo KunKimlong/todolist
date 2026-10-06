@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import { InspectGuard } from "@/components/inspect-guard";
+// import { InspectGuard } from "@/components/inspect-guard";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -33,7 +33,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           <TooltipProvider>{children}</TooltipProvider>
           <Toaster position="bottom-center" />
         </ThemeProvider>
-        <InspectGuard />
+        {/*<InspectGuard />*/}
       </body>
     </html>
   );
