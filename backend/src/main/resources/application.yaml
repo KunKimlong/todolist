@@ -33,6 +33,8 @@ spring:
       host: "${REDIS_HOST}"
       port: "${REDIS_PORT}"
       password: "${REDIS_PASSWORD}"
+      ssl:
+        enabled: true
 
   # Sessions are stored in Redis (Spring Session), so they survive backend restarts
   session:
