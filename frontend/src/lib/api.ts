@@ -21,19 +21,33 @@ function redirectToLogin() {
   window.location.replace(`/login?expired=1&next=${encodeURIComponent(next)}`);
 }
 
+/** Gateway errors while the backend is asleep or starting up (it can take about a minute) */
+const WAKING_STATUSES = new Set([502, 503, 504]);
+const RETRY_DELAYS_MS = [2_000, 5_000, 10_000, 15_000, 20_000];
+
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  let res: Response;
-  try {
-    res = await fetch(`${API_BASE}${path}`, {
-      ...init,
-      headers: { "Content-Type": "application/json", ...init?.headers },
-      // Auth is the HttpOnly session cookie; send it even if the API is on another origin
-      credentials: "include",
-      cache: "no-store",
-    });
-  } catch {
-    throw new ApiError("Cannot reach the server. Is the backend running?", 0);
+  // Only reads are retried: repeating a POST/PUT/DELETE could apply it twice
+  const retryable = (init?.method ?? "GET").toUpperCase() === "GET";
+  let res: Response | undefined;
+  for (let attempt = 0; ; attempt++) {
+    try {
+      res = await fetch(`${API_BASE}${path}`, {
+        ...init,
+        headers: { "Content-Type": "application/json", ...init?.headers },
+        // Auth is the HttpOnly session cookie; send it even if the API is on another origin
+        credentials: "include",
+        cache: "no-store",
+      });
+    } catch {
+      res = undefined;
+    }
+    const waking = !res || WAKING_STATUSES.has(res.status);
+    if (!waking || !retryable || attempt >= RETRY_DELAYS_MS.length) break;
+    await sleep(RETRY_DELAYS_MS[attempt]);
   }
+  if (!res) throw new ApiError("Cannot reach the server. Is the backend running?", 0);
 
   if (!res.ok) {
     // Session missing or expired while using the app

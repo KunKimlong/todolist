@@ -3,23 +3,33 @@ import { NextResponse, type NextRequest } from "next/server";
 const BACKEND_URL = (process.env.BACKEND_URL ?? "http://localhost:8080").replace(/\/+$/, "");
 const SESSION_COOKIE = "TODO_SESSION";
 
+/**
+ * "unknown" means the backend couldn't answer (asleep, starting up, down). That says
+ * nothing about the session, so the cookie must not be treated as expired.
+ */
+type SessionState = "signed-in" | "signed-out" | "unknown";
+
 /** Ask the backend whether the session cookie on this request is still valid */
-async function isSignedIn(request: NextRequest) {
-  if (!request.cookies.has(SESSION_COOKIE)) return false;
+async function sessionState(request: NextRequest): Promise<SessionState> {
+  if (!request.cookies.has(SESSION_COOKIE)) return "signed-out";
   try {
     const res = await fetch(`${BACKEND_URL}/api/auth/me`, {
       headers: { cookie: request.headers.get("cookie") ?? "" },
       cache: "no-store",
+      signal: AbortSignal.timeout(10_000),
     });
-    return res.ok;
+    if (res.ok) return "signed-in";
+    if (res.status === 401 || res.status === 403) return "signed-out";
+    return "unknown";
   } catch {
-    return false;
+    return "unknown";
   }
 }
 
 export async function proxy(request: NextRequest) {
   const { pathname, search } = request.nextUrl;
-  const signedIn = await isSignedIn(request);
+  const state = await sessionState(request);
+  const signedIn = state === "signed-in";
 
   // Signed-out-only pages: if already signed in, there's nothing to do here
   if (pathname === "/login") {
@@ -28,6 +38,10 @@ export async function proxy(request: NextRequest) {
   if (pathname === "/forgot-password") {
     return signedIn ? NextResponse.redirect(new URL("/settings", request.url)) : NextResponse.next();
   }
+
+  // Backend unreachable: let the page load with the cookie intact. Its API calls retry
+  // while the backend wakes up and only a real 401 sends the user to the login page.
+  if (state === "unknown") return NextResponse.next();
 
   if (!signedIn) {
     const login = new URL("/login", request.url);
