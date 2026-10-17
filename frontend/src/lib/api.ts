@@ -21,15 +21,21 @@ function redirectToLogin() {
   window.location.replace(`/login?expired=1&next=${encodeURIComponent(next)}`);
 }
 
-/** Gateway errors while the backend is asleep or starting up (it can take about a minute) */
+/**
+ * Gateway errors while the backend is asleep or starting up. On Render's free plan a
+ * cold start has taken up to about 160 seconds, so the retries cover roughly 3 minutes.
+ */
 const WAKING_STATUSES = new Set([502, 503, 504]);
-const RETRY_DELAYS_MS = [2_000, 5_000, 10_000, 15_000, 20_000];
+const RETRY_DELAYS_MS = [2_000, 5_000, 10_000, 15_000, 20_000, 30_000, 30_000, 30_000, 30_000];
+
+/** Requests that are safe to send again: signing in twice just makes a fresh session */
+const RETRYABLE_POSTS = new Set(["/auth/login"]);
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  // Only reads are retried: repeating a POST/PUT/DELETE could apply it twice
-  const retryable = (init?.method ?? "GET").toUpperCase() === "GET";
+  // Reads and sign-in are retried; repeating other writes could apply them twice
+  const retryable = (init?.method ?? "GET").toUpperCase() === "GET" || RETRYABLE_POSTS.has(path);
   let res: Response | undefined;
   for (let attempt = 0; ; attempt++) {
     try {

@@ -24,12 +24,15 @@ export function LoginForm({
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  // A slow sign-in almost always means the backend is waking up from sleep
+  const [slow, setSlow] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (submitting) return;
     setSubmitting(true);
     setError(null);
+    const slowTimer = setTimeout(() => setSlow(true), 5_000);
     try {
       await authApi.login(email.trim(), password);
       // Full navigation so the server sees the new session cookie
@@ -38,6 +41,9 @@ export function LoginForm({
       setError(err instanceof Error ? err.message : "Something went wrong");
       setPassword("");
       setSubmitting(false);
+    } finally {
+      clearTimeout(slowTimer);
+      setSlow(false);
     }
   }
 
@@ -105,6 +111,13 @@ export function LoginForm({
               required
             />
           </div>
+
+          {slow && (
+            <p role="status" className="flex items-start gap-2 text-sm text-muted-foreground">
+              <HiOutlineClock className="mt-0.5 size-4 shrink-0" />
+              The server is starting up after a quiet spell. This can take up to 3 minutes.
+            </p>
+          )}
 
           {error && (
             <p role="alert" className="text-sm text-red-600 dark:text-red-400">
