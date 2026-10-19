@@ -12,8 +12,9 @@ spring:
     import: "optional:file:.env[.properties]"
 
   datasource:
-    # Assembled from parts so each one can be overridden on its own
-    url: "jdbc:postgresql://${DB_HOST}:${DB_PORT}/${DB_NAME}"
+    # Assembled from parts so each one can be overridden on its own.
+    # DB_SSLMODE may be left unset (driver default "prefer"); use "require" for Supabase.
+    url: "jdbc:postgresql://${DB_HOST}:${DB_PORT}/${DB_NAME}?sslmode=${DB_SSLMODE:prefer}"
     username: "${DB_USERNAME}"
     password: "${DB_PASSWORD}"
 
